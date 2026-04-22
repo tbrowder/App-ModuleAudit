@@ -1,0 +1,120 @@
+#!/usr/bin/env raku
+use v6;
+
+use App::ModuleAudit;
+use JSON::Fast;
+
+multi sub MAIN(
+    'scan',
+    Str:D :$db-path = 'modules.db'
+) {
+    my Int:D $count = scan-and-save(db-path => $db-path);
+    say "Saved {$count} module record(s) to {$db-path}";
+}
+
+multi sub MAIN(
+    'list',
+    Str:D :$db-path = 'modules.db'
+) {
+    my @modules = load-installed(db-path => $db-path);
+
+    for @modules.sort(*.name) -> $module {
+        say $module.short-str;
+    }
+}
+
+multi sub MAIN(
+    'check-upgrades',
+    Str:D :$db-path = 'modules.db',
+    Bool:D :$json = False,
+    Int:D :$parallel = 4
+) {
+    my @modules = check-for-upgrades(
+        db-path  => $db-path,
+        parallel => $parallel,
+    );
+
+    if $json {
+        my @out;
+
+        for @modules.sort(*.name) -> $module {
+            @out.push(
+                {
+                    name               => $module.name,
+                    auth               => $module.auth,
+                    api                => $module.api,
+                    installed-ver      => $module.ver,
+                    latest-known-ver   => $module.latest-known-ver,
+                    upgrade-available  => $module.has-upgrade,
+                }
+            );
+        }
+
+        say to-json(@out, :pretty);
+        return;
+    }
+
+    for @modules.sort(*.name) -> $module {
+        my Str:D $latest = $module.latest-known-ver // '*';
+        my Str:D $flag = $module.has-upgrade ?? 'yes' !! 'no';
+
+        say "{$module.name}\tinstalled={$module.ver // '*'}\tlatest={$latest}\tupgrade={$flag}";
+    }
+}
+
+multi sub MAIN(
+    'report',
+    Str:D :$db-path = 'modules.db',
+    Bool:D :$upgrades-only = False,
+    Int:D :$parallel = 4
+) {
+    my @modules = check-for-upgrades(
+        db-path  => $db-path,
+        parallel => $parallel,
+    );
+
+    say sprintf '%-35s %-12s %-12s %s', 'Module', 'Installed', 'Latest', 'Status';
+    say '-' x 75;
+
+    for @modules.sort(*.name) -> $module {
+        next if $upgrades-only and not $module.has-upgrade;
+
+        my Str:D $status = $module.has-upgrade ?? 'UPGRADE' !! '';
+        say sprintf '%-35s %-12s %-12s %s',
+            $module.name,
+            $module.ver // '*',
+            $module.latest-known-ver // '*',
+            $status;
+    }
+}
+
+multi sub MAIN(
+    'remove',
+    Str:D :$db-path = 'modules.db',
+    Bool:D :$dry-run = False,
+    *@names
+) {
+    my Int:D $count = remove-modules(
+        db-path => $db-path,
+        |@names,
+        :$dry-run,
+    );
+
+    say "Removed {$count} module(s)";
+}
+
+multi sub MAIN(
+    'downgrade',
+    Str:D :$db-path = 'modules.db',
+    Bool:D :$dry-run = False,
+    Str:D :$name!,
+    Str:D :$to!
+) {
+    my Int:D $count = downgrade-modules(
+        db-path => $db-path,
+        $name   => $to,
+        :$dry-run,
+    );
+
+    say "Downgraded {$count} module(s)";
+}

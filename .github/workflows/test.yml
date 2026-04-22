@@ -1,0 +1,21 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Raku
+        uses: Raku/setup-raku@v1
+
+      - name: Install dependencies
+        run: zef install --deps-only .
+
+      - name: Run tests
+        run: zef test .

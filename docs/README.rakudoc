@@ -2,28 +2,353 @@
 
 =head1 NAME
 
-B<App::ModuleAudit> - blah blah blah
+App::ModuleAudit - Inventory, track, and manage installed Raku modules
 
 =head1 SYNOPSIS
 
-=begin code :lang<raku>
+    module-audit scan --db-path=modules.db
+    module-audit list --db-path=modules.db
 
-use App::ModuleAudit;
+    module-audit check-upgrades --db-path=modules.db
+    module-audit check-upgrades --db-path=modules.db --json
+    module-audit check-upgrades --db-path=modules.db --parallel=8
 
-=end code
+    module-audit report --db-path=modules.db
+    module-audit report --db-path=modules.db --upgrades-only
+
+    module-audit remove --db-path=modules.db JSON::Fast
+
+    module-audit downgrade \
+        --db-path=modules.db \
+        --name=JSON::Fast \
+        --to=0.19
 
 =head1 DESCRIPTION
 
-B<App::ModuleAudit> is ...
+App::ModuleAudit is a small toolkit for managing installed Raku modules.
+
+It has four main goals:
+
+=over 4
+
+=item * collect installed module data and store it in a database file
+
+=item * check known modules for possible upgrades on a regular schedule
+
+=item * remove or downgrade selected modules
+
+=item * provide class objects that make module data easier to work with
+
+=back
+
+The project is designed as both:
+
+=over 4
+
+=item * a command-line application
+
+=item * a reusable library
+
+=back
+
+=head1 FEATURES
+
+=head2 Persistent inventory
+
+Each scan stores module observations in a SQLite database. The schema separates:
+
+=over 4
+
+=item * module identity
+
+=item * installation observations over time
+
+=back
+
+This makes it possible to preserve history instead of overwriting previous data.
+
+=head2 Upgrade checks
+
+The upgrade check reads known modules from the database, looks up the latest known
+version for each module, and marks modules that appear to have an upgrade available.
+
+This check is intended to be safe for scheduled use. It does not perform upgrades by
+itself.
+
+=head2 Remove and downgrade routines
+
+Removal and downgrade are separate operations. This keeps the management actions
+explicit and reduces risk when the program is run automatically.
+
+=head2 Module objects
+
+Each module is represented as a C<Module-Record> object. This gives a consistent
+place for identity, version metadata, and upgrade state.
+
+=head1 DESIGN
+
+=head2 Class layout
+
+=head3 C<App::ModuleAudit::Module-Record>
+
+Represents one installed module.
+
+Tracks values such as:
+
+=over 4
+
+=item * name
+
+=item * auth
+
+=item * api
+
+=item * ver
+
+=item * latest-known-ver
+
+=item * upgrade-available
+
+=back
+
+=head3 C<App::ModuleAudit::Module-Store>
+
+Acts as the manager for the database and module operations.
+
+Provides methods for:
+
+=over 4
+
+=item * scanning installed modules
+
+=item * saving scan results
+
+=item * loading current module records
+
+=item * checking upgrades
+
+=item * removing modules
+
+=item * downgrading modules
+
+=back
+
+=head2 Database layout
+
+The SQLite database uses two main tables.
+
+=head3 C<module_identities>
+
+Stores the logical identity of a module:
+
+=over 4
+
+=item * name
+
+=item * auth
+
+=item * api
+
+=back
+
+=head3 C<module_installations>
+
+Stores observations over time:
+
+=over 4
+
+=item * version
+
+=item * source
+
+=item * install path
+
+=item * seen timestamp
+
+=item * latest known version
+
+=item * upgrade flag
+
+=back
+
+=head1 COMMANDS
+
+=head2 C<scan>
+
+Scan the currently installed modules and save them to the database.
+
+Example:
+
+    module-audit scan --db-path=modules.db
+
+=head2 C<list>
+
+List the currently known modules from the database.
+
+Example:
+
+    module-audit list --db-path=modules.db
+
+=head2 C<check-upgrades>
+
+Check all known modules for later versions.
+
+Options:
+
+=over 4
+
+=item * C<--json>
+
+Emit machine-readable JSON output.
+
+=item * C<--parallel=N>
+
+Use up to C<N> concurrent lookup tasks.
+
+=back
+
+Examples:
+
+    module-audit check-upgrades --db-path=modules.db
+    module-audit check-upgrades --db-path=modules.db --json
+    module-audit check-upgrades --db-path=modules.db --parallel=8
+
+=head2 C<report>
+
+Show a formatted report of installed and latest known versions.
+
+Options:
+
+=over 4
+
+=item * C<--upgrades-only>
+
+Show only modules with an apparent upgrade available.
+
+=back
+
+Examples:
+
+    module-audit report --db-path=modules.db
+    module-audit report --db-path=modules.db --upgrades-only
+
+=head2 C<remove>
+
+Remove one or more installed modules.
+
+Example:
+
+    module-audit remove --db-path=modules.db JSON::Fast Cro::HTTP
+
+=head2 C<downgrade>
+
+Downgrade one module to a selected version.
+
+Example:
+
+    module-audit downgrade --db-path=modules.db --name=JSON::Fast --to=0.19
+
+=head1 LIBRARY USAGE
+
+=head2 Scan and save
+
+    use App::ModuleAudit;
+
+    my Int:D $count = scan-and-save(db-path => 'modules.db');
+
+=head2 Load installed modules
+
+    use App::ModuleAudit;
+
+    my @modules = load-installed(db-path => 'modules.db');
+
+=head2 Check upgrades
+
+    use App::ModuleAudit;
+
+    my @modules = check-for-upgrades(
+        db-path  => 'modules.db',
+        parallel => 4,
+    );
+
+=head1 AUTOMATION
+
+A scheduled task should normally use only the upgrade check or report commands.
+That keeps scheduled execution non-destructive.
+
+Example cron entry:
+
+    30 6 * * * /usr/bin/env raku /path/to/bin/module-audit \
+        check-upgrades --db-path=/path/to/modules.db --json \
+        > /path/to/report.json
+
+=head1 LIMITATIONS
+
+=over 4
+
+=item * The exact output of C<zef list --installed> can vary and may require parser refinement.
+
+=item * Downgrade support depends on installer behavior and available historical releases.
+
+=item * The current upgrade lookup uses C<zef info> and may need adjustment for some repositories.
+
+=back
+
+=head1 PROJECT LAYOUT
+
+    bin/
+        module-audit
+    docs/
+        README.rakudoc
+    lib/
+        App/
+            ModuleAudit.rakumod
+            ModuleAudit/
+                DB.rakumod
+                Module-Record.rakumod
+                Module-Store.rakumod
+                Scanner.rakumod
+    t/
+        00-load.t
+        01-module-record.t
+        02-scanner-parse.t
+
+=head1 BUILD AND TEST
+
+Typical commands:
+
+    mi6 test
+    mi6 build
+    mi6 dist
+
+For direct dependency testing:
+
+    zef test .
+
+=head1 FUTURE WORK
+
+Possible next improvements include:
+
+=over 4
+
+=item * better structured metadata lookup
+
+=item * dependency graph storage
+
+=item * scan-to-scan diff reports
+
+=item * notification hooks for upgrade results
+
+=item * stronger downgrade resolution logic
+
+=back
 
 =head1 AUTHOR
 
-Tom Browder <tbrowder@acm.org>
+Thomas Browder
 
-=head1 COPYRIGHT AND LICENSE
+=head1 LICENSE
 
-© 2026 Tom Browder
-
-This library is free software; you may redistribute it or modify it under the Artistic License 2.0.
+Artistic License 2.0
 
 =end pod
