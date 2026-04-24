@@ -37,17 +37,17 @@ method save-scan(@modules --> Int:D) {
         my Int:D $module-id = find-or-create-module-id(
             $dbh,
             $module.name,
-            $module.auth,
-            $module.api,
+            ($module.auth // ''),
+            ($module.api // ''),
         );
 
         insert-installation(
             $dbh,
             $module-id,
-            $module.ver,
-            $module.dist,
-            $module.source,
-            $module.install-path,
+            ($module.ver // ''),
+            ($module.dist // ''),
+            ($module.source // ''),
+            ($module.install-path // ''),
             $timestamp,
             :installed($module.installed),
             :latest-known-ver($module.latest-known-ver),
@@ -74,13 +74,13 @@ method load-installed(--> Array) {
         @modules.push(
             App::ModuleAudit::Module-Record.new(
                 name              => %row<name>,
-                auth              => %row<auth>,
-                api               => %row<api>,
-                ver               => %row<ver>,
-                dist              => %row<dist>,
-                source            => %row<source>,
-                install-path      => %row<install-path>,
-                installed         => %row<installed>,
+                auth              => %row<auth> // '',
+                api               => %row<api> // '',
+                ver               => %row<ver> // '',
+                dist              => %row<dist> // '',
+                source            => %row<source> // '',
+                install-path      => %row<install-path> // '',
+                installed         => so %row<installed>,
                 latest-known-ver  => %row<latest-known-ver>,
                 upgrade-available => %row<upgrade-available>,
             )

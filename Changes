@@ -1,6 +1,10 @@
 Revision history for App::ModuleAudit
 
 {{$NEXT}}
+    - Normalize missing module metadata to plain strings.
+    - Coerce missing database metadata when loading installed modules.
+    - Allow nullable module metadata such as dist.
+    - Fix DB typed hash row arrays.
     - Fix Module-Store database handle return type.
     - Fix Scanner typed Module-Record arrays.
     - Fix Upgrade-Checker typed result array.

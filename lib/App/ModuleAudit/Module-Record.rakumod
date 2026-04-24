@@ -2,16 +2,17 @@ use v6;
 
 unit class App::ModuleAudit::Module-Record;
 
+
 has Str:D $.name is required;
-has Str $.auth is rw;
-has Str $.api is rw;
-has Str $.ver is rw;
-has Str $.dist is rw;
-has Str $.source is rw;
-has Str $.install-path is rw;
+has Str $.auth is rw = '';
+has Str $.api is rw = '';
+has Str $.ver is rw = '';
+has Str $.dist is rw = '';
+has Str $.source is rw = '';
+has Str $.install-path is rw = '';
 has Bool:D $.installed is rw = True;
 
-has Str $.latest-known-ver is rw;
+has Str $.latest-known-ver is rw = '';
 has Bool:D $.upgrade-available is rw = False;
 
 method identity-key(--> Str:D) {

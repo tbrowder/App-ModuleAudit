@@ -56,8 +56,8 @@ sub find-or-create-module-id(
     #DBIish::Database:D $dbh,
     $dbh,
     Str:D $name,
-    Str $auth,
-    Str $api
+    Str $auth = '',
+    Str $api = ''
     --> Int:D
 ) is export {
     my $select-sth = $dbh.prepare(q:to/SQL/);
@@ -90,10 +90,10 @@ sub insert-installation(
     #DBIish::Database:D $dbh,
     $dbh,
     Int:D $module-id,
-    Str $ver,
-    Str $dist,
-    Str $source,
-    Str $install-path,
+    Str $ver = '',
+    Str $dist = '',
+    Str $source = '',
+    Str $install-path = '',
     Str:D $seen-at,
     Bool:D :$installed = True,
     Str :$latest-known-ver,
@@ -131,7 +131,7 @@ SQL
 sub load-current-installations(
     #DBIish::Database:D $dbh
     $dbh
-    --> Array[Hash:D]
+    --> Array
 ) is export {
     my $sth = $dbh.prepare(q:to/SQL/);
 SELECT
@@ -161,7 +161,7 @@ SQL
 
     $sth.execute();
 
-    my Array[Hash:D] @rows;
+    my Hash:D @rows;
 
     loop {
         my @row = $sth.row;
@@ -184,5 +184,5 @@ SQL
         );
     }
 
-    return @rows;
+    return @rows.Array;
 }
