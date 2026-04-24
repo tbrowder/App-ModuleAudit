@@ -69,8 +69,16 @@ method load-installed(--> Array) {
     my $dbh = self.dbh;
     my @rows = load-current-installations($dbh);
     my App::ModuleAudit::Module-Record:D @modules;
+    my %seen-module-records;
 
     for @rows -> %row {
+        my Str:D $identity-key = (%row<name> // '') ~ "\t"
+            ~ (%row<auth> // '') ~ "\t"
+            ~ (%row<api> // '');
+
+        next if %seen-module-records{$identity-key}:exists;
+        %seen-module-records{$identity-key} = True;
+
         @modules.push(
             App::ModuleAudit::Module-Record.new(
                 name              => %row<name>,

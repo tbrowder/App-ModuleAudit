@@ -1,6 +1,7 @@
 Revision history for App::ModuleAudit
 
 {{$NEXT}}
+    - Deduplicate current module list output.
     - Fix DB insert-installation signature ordering.
     - Normalize missing module metadata to plain strings.
     - Coerce missing database metadata when loading installed modules.

@@ -152,9 +152,11 @@ WHERE ins.id IN (
     FROM module_installations ins2
     JOIN module_identities mi2
         ON mi2.id = ins2.module_id
+    WHERE ins2.installed = 1
     GROUP BY mi2.name, mi2.auth, mi2.api
 )
-ORDER BY mi.name
+AND ins.installed = 1
+ORDER BY mi.name, mi.auth, mi.api
 SQL
 
     $sth.execute();
