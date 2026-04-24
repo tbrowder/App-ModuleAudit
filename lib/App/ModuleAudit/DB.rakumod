@@ -87,18 +87,16 @@ SQL
 }
 
 sub insert-installation(
-    #DBIish::Database:D $dbh,
     $dbh,
     Int:D $module-id,
-    Str $ver = '',
-    Str $dist = '',
-    Str $source = '',
-    Str $install-path = '',
+    Str:D $ver,
+    Str:D $dist,
+    Str:D $source,
+    Str:D $install-path,
     Str:D $seen-at,
     Bool:D :$installed = True,
-    Str :$latest-known-ver,
-    Bool:D :$upgrade-available = False
-    --> Nil
+    Str:D :$latest-known-ver = '',
+    Bool:D :$upgrade-available = False,
 ) is export {
     my $sth = $dbh.prepare(q:to/SQL/);
 INSERT INTO module_installations (

@@ -1,6 +1,7 @@
 Revision history for App::ModuleAudit
 
 {{$NEXT}}
+    - Fix DB insert-installation signature ordering.
     - Normalize missing module metadata to plain strings.
     - Coerce missing database metadata when loading installed modules.
     - Allow nullable module metadata such as dist.

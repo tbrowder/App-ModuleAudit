@@ -50,7 +50,7 @@ method save-scan(@modules --> Int:D) {
             ($module.install-path // ''),
             $timestamp,
             :installed($module.installed),
-            :latest-known-ver($module.latest-known-ver),
+            :latest-known-ver(($module.latest-known-ver // '')),
             :upgrade-available($module.upgrade-available),
         );
 
@@ -81,8 +81,8 @@ method load-installed(--> Array) {
                 source            => %row<source> // '',
                 install-path      => %row<install-path> // '',
                 installed         => so %row<installed>,
-                latest-known-ver  => %row<latest-known-ver>,
-                upgrade-available => %row<upgrade-available>,
+                latest-known-ver  => %row<latest-known-ver> // '',
+                upgrade-available => so %row<upgrade-available>,
             )
         );
     }
