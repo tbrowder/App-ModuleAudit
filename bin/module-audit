@@ -4,9 +4,70 @@ use v6;
 use App::ModuleAudit;
 use JSON::Fast;
 
+sub default-db-path(--> Str:D) {
+    my Str:D $home = %*ENV<HOME> // $*HOME.Str;
+    my Str:D $dir = "{$home}/.module-audit";
+
+    unless $dir.IO.e {
+        $dir.IO.mkdir;
+    }
+
+    return "{$dir}/module-audit.db";
+}
+
+sub print-list-header(--> Nil) {
+    say sprintf '%-40s %-18s %-8s %-14s %-18s',
+        'NAME',
+        'AUTH',
+        'API',
+        'VERSION',
+        'UPGRADE AVAILABLE';
+}
+
+sub print-list-row($module --> Nil) {
+    my Str:D $auth = $module.auth // '';
+    my Str:D $api = $module.api // '';
+    my Str:D $ver = $module.ver // '';
+    my Str:D $upgrade = $module.has-upgrade ?? 'yes' !! 'no';
+
+    say sprintf '%-40s %-18s %-8s %-14s %-18s',
+        $module.name,
+        $auth,
+        $api,
+        $ver,
+        $upgrade;
+}
+
+sub print-list-summary(@modules --> Nil) {
+    my Int:D $total = @modules.elems;
+    my Int:D $upgrades = 0;
+    my Int:D $up-to-date = 0;
+    my Int:D $missing-version = 0;
+
+    for @modules -> $module {
+        if $module.has-upgrade {
+            $upgrades++;
+        }
+        else {
+            $up-to-date++;
+        }
+
+        if not $module.ver.defined or $module.ver.chars == 0 {
+            $missing-version++;
+        }
+    }
+
+    say '';
+    say "Summary: total unique installed modules={$total}; "
+        ~ "upgrades available={$upgrades}; "
+        ~ "up-to-date={$up-to-date}; "
+        ~ "missing version={$missing-version}";
+}
+
+
 multi sub MAIN(
     'scan',
-    Str:D :$db-path = 'modules.db'
+    Str:D :$db-path = default-db-path()
 ) {
     my Int:D $count = scan-and-save(db-path => $db-path);
     say "Saved {$count} module record(s) to {$db-path}";
@@ -14,18 +75,29 @@ multi sub MAIN(
 
 multi sub MAIN(
     'list',
-    Str:D :$db-path = 'modules.db'
+    Str:D :$db-path = default-db-path(),
+    Bool:D :$repeat-headings = False
 ) {
     my @modules = load-installed(db-path => $db-path);
+    my @sorted-modules = @modules.sort(*.name);
 
-    for @modules.sort(*.name) -> $module {
-        say $module.short-str;
+    print-list-header();
+
+    for @sorted-modules -> $module {
+        print-list-row($module);
     }
+
+    if $repeat-headings and @sorted-modules.elems > 0 {
+        say '';
+        print-list-header();
+    }
+
+    print-list-summary(@sorted-modules);
 }
 
 multi sub MAIN(
     'check-upgrades',
-    Str:D :$db-path = 'modules.db',
+    Str:D :$db-path = default-db-path(),
     Bool:D :$json = False,
     Bool:D :$quiet = False,
     Bool:D :$upgrades-only = False,
@@ -73,7 +145,7 @@ multi sub MAIN(
 
 multi sub MAIN(
     'report',
-    Str:D :$db-path = 'modules.db',
+    Str:D :$db-path = default-db-path(),
     Bool:D :$upgrades-only = False,
     Int:D :$parallel = 4
 ) {
@@ -88,7 +160,7 @@ multi sub MAIN(
     for @modules.sort(*.name) -> $module {
         next if $upgrades-only and not $module.has-upgrade;
 
-        my Str:D $status = $module.has-upgrade ?? 'UPGRADE' !! '';
+        my Str:D $status = $module.has-upgrade ?? 'UPGRADE AVAILABLE' !! '';
         say sprintf '%-35s %-12s %-12s %s',
             $module.name,
             $module.ver // '*',
@@ -99,7 +171,7 @@ multi sub MAIN(
 
 multi sub MAIN(
     'remove',
-    Str:D :$db-path = 'modules.db',
+    Str:D :$db-path = default-db-path(),
     Bool:D :$dry-run = False,
     *@names
 ) {
@@ -114,7 +186,7 @@ multi sub MAIN(
 
 multi sub MAIN(
     'downgrade',
-    Str:D :$db-path = 'modules.db',
+    Str:D :$db-path = default-db-path(),
     Bool:D :$dry-run = False,
     Str:D :$name!,
     Str:D :$to!

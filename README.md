@@ -15,3 +15,21 @@ module-audit downgrade --name=Some::Module --to=1.2.3 --db-path=modules.db --dry
 ```
 
 The canonical documentation source is `docs/README.rakudoc`.
+
+
+## List output
+
+The `list` command uses the default database at:
+
+```text
+~/.module-audit/module-audit.db
+```
+
+Use `--db-path` to override that location.
+
+```bash
+module-audit list
+module-audit list --repeat-headings
+```
+
+The `list` output includes an `UPGRADE AVAILABLE` column and a final summary line with total unique installed modules, modules with available upgrades, up-to-date modules, and records missing a version.

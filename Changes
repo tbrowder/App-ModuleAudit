@@ -1,6 +1,10 @@
 Revision history for App::ModuleAudit
 
 {{$NEXT}}
+    - Implement repeat-headings option in list source.
+    - Rename list/report upgrade column to UPGRADE AVAILABLE in source.
+    - Add summary status line to list output.
+    - Implement default DB location at ~/.module-audit/module-audit.db.
     - Deduplicate current module list output.
     - Fix DB insert-installation signature ordering.
     - Normalize missing module metadata to plain strings.
