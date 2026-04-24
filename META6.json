@@ -3,8 +3,10 @@
   "authors": [
     "Tom Browder"
   ],
-  "build-depends": [],
-  "depends": [],
+  "build-depends": [
+  ],
+  "depends": [
+  ],
   "description": "Manage local Raku modules",
   "license": "Artistic-2.0",
   "name": "App::ModuleAudit",
@@ -17,9 +19,12 @@
     "App::ModuleAudit::Scanner": "lib/App/ModuleAudit/Scanner.rakumod",
     "App::ModuleAudit::Upgrade-Checker": "lib/App/ModuleAudit/Upgrade-Checker.rakumod"
   },
-  "resources": [],
+  "resources": [
+  ],
   "source-url": "https://github.com/tbrowder/App-ModuleAudit.git",
-  "tags": [],
-  "test-depends": [],
+  "tags": [
+  ],
+  "test-depends": [
+  ],
   "version": "0.0.2"
 }
