@@ -1,0 +1,7 @@
+Revision history for App::ModuleAudit
+
+{{$NEXT}}
+    - Fix Module-Store database handle return type.
+    - Fix Scanner typed Module-Record arrays.
+    - Fix Upgrade-Checker typed result array.
+    - Initial version

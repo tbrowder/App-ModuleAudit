@@ -352,3 +352,31 @@ Thomas Browder
 Artistic License 2.0
 
 =end pod
+
+
+=head2 Scheduled upgrade checks
+
+The C<check-upgrades> command is safe by default: it reports available upgrades but does not install them.
+Use C<--apply> only when you want the checker to run C<zef install> for modules with newer versions.
+Use C<--dry-run> with C<--apply> to print the commands without changing the system.
+
+Examples:
+
+=begin code
+module-audit check-upgrades --db-path=modules.db
+module-audit check-upgrades --db-path=modules.db --upgrades-only --quiet --log=upgrade.log
+module-audit check-upgrades --db-path=modules.db --apply --dry-run
+=end code
+
+A cron-friendly helper is provided as C<scripts/module-audit-cron>. Example crontab entry:
+
+=begin code
+0 3 * * * /path/to/App-ModuleAudit/scripts/module-audit-cron
+=end code
+
+=head2 Remove and downgrade helpers
+
+=begin code
+module-audit remove Some::Module --db-path=modules.db --dry-run
+module-audit downgrade --name=Some::Module --to=1.2.3 --db-path=modules.db --dry-run
+=end code

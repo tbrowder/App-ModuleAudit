@@ -12,7 +12,7 @@ our sub scan-and-save(Str:D :$db-path! --> Int:D) is export {
 
 our sub load-installed(
     Str:D :$db-path!
-    --> Array[App::ModuleAudit::Module-Record:D]
+    --> Array
 ) is export {
     my $store = App::ModuleAudit::Module-Store.new(db-path => $db-path);
     return $store.load-installed();
@@ -20,11 +20,17 @@ our sub load-installed(
 
 our sub check-for-upgrades(
     Str:D :$db-path!,
-    Int:D :$parallel = 4
-    --> Array[App::ModuleAudit::Module-Record:D]
+    Int:D :$parallel = 4,
+    Bool:D :$apply = False,
+    Bool:D :$dry-run = False
+    --> Array
 ) is export {
     my $store = App::ModuleAudit::Module-Store.new(db-path => $db-path);
-    return $store.check-upgrades(parallel => $parallel);
+    return $store.check-upgrades(
+        parallel => $parallel,
+        :$apply,
+        :$dry-run,
+    );
 }
 
 our sub remove-modules(

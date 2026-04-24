@@ -27,12 +27,21 @@ multi sub MAIN(
     'check-upgrades',
     Str:D :$db-path = 'modules.db',
     Bool:D :$json = False,
+    Bool:D :$quiet = False,
+    Bool:D :$upgrades-only = False,
+    Bool:D :$apply = False,
+    Bool:D :$dry-run = False,
+    Str :$log,
     Int:D :$parallel = 4
 ) {
     my @modules = check-for-upgrades(
         db-path  => $db-path,
         parallel => $parallel,
+        :$apply,
+        :$dry-run,
     );
+
+    my @lines;
 
     if $json {
         my @out;

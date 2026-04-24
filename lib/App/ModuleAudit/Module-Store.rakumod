@@ -5,11 +5,12 @@ unit class App::ModuleAudit::Module-Store;
 use App::ModuleAudit::DB;
 use App::ModuleAudit::Module-Record;
 use App::ModuleAudit::Scanner;
+use App::ModuleAudit::Upgrade-Checker;
 
 has Str:D $.db-path is required;
 
 #method dbh(--> DBIish::Database:D) {
-method dbh(--> Str:D) {
+method dbh() {
     state %cache;
 
     if %cache{$.db-path}:exists {
@@ -23,7 +24,7 @@ method dbh(--> Str:D) {
     return $dbh;
 }
 
-method scan-installed(--> Array[App::ModuleAudit::Module-Record:D]) {
+method scan-installed(--> Array) {
     return scan-installed-modules();
 }
 
@@ -64,10 +65,10 @@ method scan-and-save(--> Int:D) {
     return self.save-scan(@modules);
 }
 
-method load-installed(--> Array[App::ModuleAudit::Module-Record:D]) {
+method load-installed(--> Array) {
     my $dbh = self.dbh;
     my @rows = load-current-installations($dbh);
-    my Array[App::ModuleAudit::Module-Record:D] @modules;
+    my App::ModuleAudit::Module-Record:D @modules;
 
     for @rows -> %row {
         @modules.push(
@@ -86,70 +87,22 @@ method load-installed(--> Array[App::ModuleAudit::Module-Record:D]) {
         );
     }
 
-    return @modules;
+    return @modules.Array;
 }
 
 method check-upgrades(
-    Int:D :$parallel = 4
-    --> Array[App::ModuleAudit::Module-Record:D]
+    Int:D :$parallel = 4,
+    Bool:D :$apply = False,
+    Bool:D :$dry-run = False
+    --> Array
 ) {
     my @modules = self.load-installed();
-    my @batch;
+    my $checker = App::ModuleAudit::Upgrade-Checker.new(
+        :$apply,
+        :$dry-run,
+    );
 
-    for @modules -> $module {
-        @batch.push(
-            start {
-                my Str $latest = self.lookup-latest-version($module);
-
-                if $latest.defined and $latest.chars > 0 {
-                    $module.mark-latest($latest);
-                }
-
-                return $module;
-            }
-        );
-
-        if @batch.elems >= $parallel {
-            await @batch;
-            @batch = ();
-        }
-    }
-
-    if @batch {
-        await @batch;
-    }
-
-    return @modules;
-}
-
-method lookup-latest-version(
-    App::ModuleAudit::Module-Record:D $module
-    --> Str
-) {
-    my @cmd = <zef info>;
-    @cmd.push($module.name);
-
-    my $proc = run |@cmd, :out, :err;
-
-    my Str:D $stdout = $proc.out.slurp-rest;
-    my Str:D $stderr = $proc.err.slurp-rest;
-
-    if $proc.exitcode != 0 {
-        return Nil;
-    }
-
-    for $stdout.lines -> $line {
-        my Str:D $t = $line.trim;
-
-        if $t ~~ /^ 'Version:' \s* (.+) $/ {
-            return ~$0;
-        }
-        elsif $t ~~ /^ 'ver<' (.+) '>' $/ {
-            return ~$0;
-        }
-    }
-
-    return Nil;
+    return $checker.check(@modules, :$parallel);
 }
 
 method remove-module(
@@ -157,16 +110,7 @@ method remove-module(
     Bool:D :$dry-run = False
     --> Bool:D
 ) {
-    my @cmd = <zef uninstall>;
-    @cmd.push($module.name);
-
-    if $dry-run {
-        say @cmd.join(' ');
-        return True;
-    }
-
-    my $proc = run |@cmd;
-    return $proc.exitcode == 0;
+    return $module.remove(:$dry-run);
 }
 
 method downgrade-module(
@@ -175,21 +119,5 @@ method downgrade-module(
     Bool:D :$dry-run = False
     --> Bool:D
 ) {
-    my @remove-cmd = <zef uninstall>;
-    @remove-cmd.push($module.name);
-
-    my @install-cmd = <zef install>;
-    @install-cmd.push("{$module.name}:ver<{$target-ver}>");
-
-    if $dry-run {
-        say @remove-cmd.join(' ');
-        say @install-cmd.join(' ');
-        return True;
-    }
-
-    my $remove-proc = run |@remove-cmd;
-    return False if $remove-proc.exitcode != 0;
-
-    my $install-proc = run |@install-cmd;
-    return $install-proc.exitcode == 0;
+    return $module.downgrade($target-ver, :$dry-run);
 }

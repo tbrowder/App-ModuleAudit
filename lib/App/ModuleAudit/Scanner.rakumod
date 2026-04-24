@@ -5,9 +5,9 @@ unit module App::ModuleAudit::Scanner;
 use App::ModuleAudit::Module-Record;
 
 sub scan-installed-modules(
-    --> Array[App::ModuleAudit::Module-Record:D]
+    --> Array
 ) is export {
-    my Array[App::ModuleAudit::Module-Record:D] @modules;
+    my App::ModuleAudit::Module-Record:D @modules;
     my %seen;
 
     my $proc = run 'zef', 'list', '--installed', :out, :err;
@@ -37,7 +37,21 @@ sub scan-installed-modules(
         @modules.push($module);
     }
 
-    return @modules;
+    return @modules.Array;
+}
+
+sub first-meta-index(Str:D $line --> Int) {
+    my Int $best = $line.chars;
+
+    for ':auth<', ':api<', ':ver<' -> $marker {
+        my Int $index = $line.index($marker) // -1;
+
+        if $index >= 0 and $index < $best {
+            $best = $index;
+        }
+    }
+
+    return $best;
 }
 
 sub parse-zef-line(
@@ -49,35 +63,28 @@ sub parse-zef-line(
     my Str $api;
     my Str $ver;
 
-    if $line ~~ /^
-        (<[A..Za..z0..9_.-]>+ [ '::' <[A..Za..z0..9_.-]>+ ]*)
-        [
-            ':' (.*)
-        ]?
-        $
-    / {
-        $name = ~$0;
-        my Str:D $rest = $1.defined ?? ~$1 !! '';
+    my Int:D $meta-index = first-meta-index($line);
 
-        if $rest.chars > 0 {
-            for $rest.split(':') -> $chunk {
-                if $chunk ~~ /^ 'auth<' (.+) '>' $/ {
-                    $auth = ~$0;
-                }
-                elsif $chunk ~~ /^ 'api<' (.+) '>' $/ {
-                    $api = ~$0;
-                }
-                elsif $chunk ~~ /^ 'ver<' (.+) '>' $/ {
-                    $ver = ~$0;
-                }
+    if $meta-index < $line.chars {
+        $name = $line.substr(0, $meta-index);
+        my Str:D $rest = $line.substr($meta-index);
+
+        for $rest.match(/ ':' (auth|api|ver) '<' (<-[>]>*) '>' /, :g) -> $match {
+            my Str:D $key = ~$match[0];
+            my Str:D $value = ~$match[1];
+
+            if $key eq 'auth' {
+                $auth = $value;
+            }
+            elsif $key eq 'api' {
+                $api = $value;
+            }
+            elsif $key eq 'ver' {
+                $ver = $value;
             }
         }
     }
-    elsif $line ~~ /^
-        (<[A..Za..z0..9_.-]>+ [ '::' <[A..Za..z0..9_.-]>+ ]*)
-        \s+ '(' (.+) ')'
-        $
-    / {
+    elsif $line ~~ /^ (\S+) \s+ '(' (<-[)]>+) ')' $/ {
         $name = ~$0;
         $ver = ~$1;
     }
@@ -86,6 +93,7 @@ sub parse-zef-line(
         return Nil if not @parts;
 
         $name = @parts[0];
+
         for @parts.skip(1) -> $part {
             if $part ~~ /^ 'auth=' (.+) $/ {
                 $auth = ~$0;

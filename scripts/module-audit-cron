@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -eu
+
+DB_PATH="${MODULE_AUDIT_DB_PATH:-$HOME/.local/share/module-audit/modules.db}"
+LOG_PATH="${MODULE_AUDIT_LOG_PATH:-$HOME/.local/state/module-audit/upgrade-check.log}"
+
+mkdir -p "$(dirname "$DB_PATH")" "$(dirname "$LOG_PATH")"
+
+module-audit check-upgrades \
+    --db-path="$DB_PATH" \
+    --upgrades-only \
+    --quiet \
+    --log="$LOG_PATH"

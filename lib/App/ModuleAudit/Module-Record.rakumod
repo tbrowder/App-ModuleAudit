@@ -52,6 +52,66 @@ method mark-latest(Str:D $latest-ver --> Nil) {
     }
 }
 
+method is-outdated(Str:D $latest-ver --> Bool:D) {
+    return False if not $.ver.defined;
+    return $.ver ne $latest-ver;
+}
+
+method command-result(*@cmd, :&runner --> Hash:D) {
+    if &runner.defined {
+        return runner(|@cmd);
+    }
+
+    my $proc = run |@cmd, :out, :err;
+
+    return {
+        exitcode => $proc.exitcode,
+        out      => $proc.out.slurp-rest,
+        err      => $proc.err.slurp-rest,
+    };
+}
+
+method install-latest(:&runner, Bool:D :$dry-run = False --> Bool:D) {
+    my @cmd = 'zef', 'install', $.name;
+
+    if $dry-run {
+        say @cmd.join(' ');
+        return True;
+    }
+
+    my %result = self.command-result(|@cmd, :&runner);
+    return %result<exitcode> == 0;
+}
+
+method remove(:&runner, Bool:D :$dry-run = False --> Bool:D) {
+    my @cmd = 'zef', 'uninstall', $.name;
+
+    if $dry-run {
+        say @cmd.join(' ');
+        return True;
+    }
+
+    my %result = self.command-result(|@cmd, :&runner);
+    return %result<exitcode> == 0;
+}
+
+method downgrade(Str:D $target-ver, :&runner, Bool:D :$dry-run = False --> Bool:D) {
+    my @remove-cmd = 'zef', 'uninstall', $.name;
+    my @install-cmd = 'zef', 'install', "{$.name}:ver<{$target-ver}>";
+
+    if $dry-run {
+        say @remove-cmd.join(' ');
+        say @install-cmd.join(' ');
+        return True;
+    }
+
+    my %remove-result = self.command-result(|@remove-cmd, :&runner);
+    return False if %remove-result<exitcode> != 0;
+
+    my %install-result = self.command-result(|@install-cmd, :&runner);
+    return %install-result<exitcode> == 0;
+}
+
 method as-hash(--> Hash:D) {
     return {
         name               => $.name,
