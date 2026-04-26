@@ -142,12 +142,18 @@ sub confirm-action(Str:D $prompt --> Bool:D) {
     return $answer.lc eq 'y' or $answer.lc eq 'yes';
 }
 
-sub run-uninstall(Str:D $spec, Bool:D :$dry-run --> Bool:D) {
+sub run-uninstall(Str:D $spec, Bool:D :$dry-run --> Hash:D) {
     my @cmd = 'zef', 'uninstall', $spec;
 
     if $dry-run {
         say "[dry-run] " ~ @cmd.join(' ');
-        return True;
+
+        return {
+            exitcode => 0,
+            out      => '',
+            err      => '',
+            dry-run  => True,
+        };
     }
 
     my $proc = run |@cmd, :out, :err;
@@ -157,7 +163,12 @@ sub run-uninstall(Str:D $spec, Bool:D :$dry-run --> Bool:D) {
     print $out if $out.chars > 0;
     note $err if $err.chars > 0;
 
-    return $proc.exitcode == 0;
+    return {
+        exitcode => $proc.exitcode,
+        out      => $out,
+        err      => $err,
+        dry-run  => False,
+    };
 }
 
 
@@ -322,6 +333,46 @@ multi sub MAIN(
         ~ "interactive={$interactive}";
 }
 
+sub fresh-installed-zef-lines(--> Array) {
+    my $proc = run 'zef', 'list', '--installed', :out, :err;
+    my Str:D $out = $proc.out.slurp-rest;
+    my Str:D $err = $proc.err.slurp-rest;
+
+    note $err if $err.chars > 0 and $proc.exitcode != 0;
+
+    my Str:D @lines;
+
+    for $out.lines -> $line {
+        my Str:D $trimmed = $line.trim;
+        next if $trimmed eq '';
+        @lines.push($trimmed);
+    }
+
+    return @lines.Array;
+}
+
+sub installed-spec-still-present(Str:D $module-name, Str:D $version --> Bool:D) {
+    my @lines = fresh-installed-zef-lines();
+
+    for @lines -> $line {
+        next unless $line.starts-with($module-name);
+
+        if $line.contains(":ver<{$version}>") {
+            return True;
+        }
+
+        if $line.contains("({$version})") {
+            return True;
+        }
+
+        if $line ~~ /^ $module-name \s+ '(' $version ')' / {
+            return True;
+        }
+    }
+
+    return False;
+}
+
 multi sub MAIN(
     'prune-versions',
     Str:D :$db-path = default-db-path(),
@@ -375,8 +426,11 @@ multi sub MAIN(
     my Int:D $groups-pruned = 0;
     my Int:D $targets = 0;
     my Int:D $successful = 0;
+    my Int:D $already-absent = 0;
+    my Int:D $not-verified = 0;
     my Int:D $failed = 0;
     my Int:D $skipped = 0;
+    my %attempted-specs;
 
     for %groups.keys.sort -> $key {
         my @group = %groups{$key}.Array;
@@ -402,6 +456,14 @@ multi sub MAIN(
             next if $module.ver eq $latest.ver;
 
             my Str:D $spec = module-spec-for-version($module, $module.ver);
+
+            if %attempted-specs{$spec}:exists {
+                say "Already attempted {$spec}; skipping duplicate target.";
+                $skipped++;
+                next;
+            }
+
+            %attempted-specs{$spec} = True;
             $targets++;
 
             if $interactive {
@@ -412,11 +474,32 @@ multi sub MAIN(
                 }
             }
 
-            if run-uninstall($spec, :$dry-run) {
+            if not $dry-run and not installed-spec-still-present($module.name, $module.ver) {
+                say "Already absent: {$spec}";
+                $already-absent++;
+                next;
+            }
+
+            my %result = run-uninstall($spec, :$dry-run);
+
+            if $dry-run {
                 $successful++;
+                next;
+            }
+
+            if %result<exitcode> != 0 {
+                say "Failed: {$spec} (exit {%result<exitcode>})";
+                $failed++;
+                next;
+            }
+
+            if installed-spec-still-present($module.name, $module.ver) {
+                say "Not verified after uninstall: {$spec}";
+                $not-verified++;
             }
             else {
-                $failed++;
+                say "Verified removed: {$spec}";
+                $successful++;
             }
         }
     }
@@ -426,6 +509,8 @@ multi sub MAIN(
         ~ "groups with older versions={$groups-pruned}; "
         ~ "older versions targeted={$targets}; "
         ~ "successful={$successful}; "
+        ~ "already absent={$already-absent}; "
+        ~ "not verified={$not-verified}; "
         ~ "failed={$failed}; "
         ~ "skipped={$skipped}; "
         ~ "dry-run={$dry-run}; "

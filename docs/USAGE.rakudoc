@@ -66,4 +66,11 @@ module-audit apply-file --file=modules.txt --interactive --dry-run=False --force
 Commands that modify installed modules are dry-run by default or require
 C<--force> for actual changes.
 
+=head2 Prune verification
+
+After each uninstall attempt, C<prune-versions> verifies the requested older
+version against fresh C<zef list --installed> output. The summary separates
+successful removals from already-absent targets, failed C<zef> commands,
+not-verified removals, and skipped targets.
+
 =end pod

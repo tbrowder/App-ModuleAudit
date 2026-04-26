@@ -69,3 +69,8 @@ SAFETY
 
 Commands that modify installed modules are dry-run by default or require `--force` for actual changes.
 
+Prune verification
+------------------
+
+After each uninstall attempt, `prune-versions` verifies the requested older version against fresh `zef list --installed` output. The summary separates successful removals from already-absent targets, failed `zef` commands, not-verified removals, and skipped targets.
+
