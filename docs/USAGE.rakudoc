@@ -1,0 +1,69 @@
+=begin pod
+
+=TITLE App::ModuleAudit Usage
+
+=head1 DATABASE
+
+By default, C<module-audit> uses:
+
+=begin code
+~/.module-audit/module-audit.db
+=end code
+
+Override the database path with C<--db-path>.
+
+=head1 SCANNING
+
+=begin code :lang<bash>
+module-audit scan
+=end code
+
+=head1 LISTING
+
+=begin code :lang<bash>
+module-audit list
+module-audit list --repeat-headings
+=end code
+
+The list command shows installed modules and prints a summary line.
+
+=head1 UPGRADE CHECKING
+
+=begin code :lang<bash>
+module-audit check-upgrades
+module-audit report
+=end code
+
+=head1 PRUNING OLD VERSIONS
+
+=begin code :lang<bash>
+module-audit prune-versions --name=JSON::Fast
+module-audit prune-versions --all
+module-audit prune-versions --all --dry-run=False --force
+module-audit prune-versions --all --interactive --dry-run=False --force
+=end code
+
+=head1 APPLYING A MODULE FILE
+
+A module file may contain simple names or full C<zef>-style identities:
+
+=begin code
+JSON::Fast
+Cro::HTTP
+Some::Module:ver<1.2.3>:auth<zef:AUTHOR>
+=end code
+
+Blank lines and lines beginning with C<#> are ignored.
+
+=begin code :lang<bash>
+module-audit apply-file --file=modules.txt
+module-audit apply-file --file=modules.txt --dry-run=False --force
+module-audit apply-file --file=modules.txt --interactive --dry-run=False --force
+=end code
+
+=head1 SAFETY
+
+Commands that modify installed modules are dry-run by default or require
+C<--force> for actual changes.
+
+=end pod

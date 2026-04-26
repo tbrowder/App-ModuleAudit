@@ -1,103 +1,74 @@
-# App::ModuleAudit
+[![Actions Status](https://github.com/tbrowder/App-ModuleAudit/actions/workflows/linux.yml/badge.svg)](https://github.com/tbrowder/App-ModuleAudit/actions) [![Actions Status](https://github.com/tbrowder/App-ModuleAudit/actions/workflows/macos.yml/badge.svg)](https://github.com/tbrowder/App-ModuleAudit/actions) [![Actions Status](https://github.com/tbrowder/App-ModuleAudit/actions/workflows/windows.yml/badge.svg)](https://github.com/tbrowder/App-ModuleAudit/actions)
 
-Manage local Raku modules by scanning installed modules into a SQLite database, reporting available upgrades, and providing remove/downgrade helpers.
+TITLE
+=====
 
-## Common commands
+App::ModuleAudit
 
-```bash
-module-audit scan --db-path=modules.db
-module-audit list --db-path=modules.db
-module-audit check-upgrades --db-path=modules.db
-module-audit check-upgrades --db-path=modules.db --upgrades-only --quiet --log=upgrade.log
-module-audit check-upgrades --db-path=modules.db --apply --dry-run
-module-audit remove Some::Module --db-path=modules.db --dry-run
-module-audit downgrade --name=Some::Module --to=1.2.3 --db-path=modules.db --dry-run
-```
+NAME
+====
 
-The canonical documentation source is `docs/README.rakudoc`.
+App::ModuleAudit - audit locally installed Raku modules
 
-
-## List output
-
-The `list` command uses the default database at:
-
-```text
-~/.module-audit/module-audit.db
-```
-
-Use `--db-path` to override that location.
+SYNOPSIS
+========
 
 ```bash
+module-audit scan
 module-audit list
-module-audit list --repeat-headings
+module-audit check-upgrades
 ```
 
-The `list` output includes an `UPGRADE AVAILABLE` column and a final summary line with total unique installed modules, modules with available upgrades, up-to-date modules, and records missing a version.
+DESCRIPTION
+===========
 
+`App::ModuleAudit` records and inspects the set of Raku modules installed on a local computer.
 
-## Prune older installed versions
+The default database location is:
 
-Remove all but the latest installed version of one module.
+    ~/.module-audit/module-audit.db
 
-The command is safe by default and runs as a dry run unless `--dry-run=False --force` is supplied.
+Use `--db-path` to override the database file.
 
-```bash
-module-audit prune-versions --name=JSON::Fast
-module-audit prune-versions --name=JSON::Fast --dry-run=False --force
-```
+COMMON COMMANDS
+===============
 
+  * `module-audit scan`
 
-## Prune all older installed versions
+Scan installed modules and save the current module set.
 
-Preview older installed versions for every module:
+  * `module-audit list`
 
-```bash
-module-audit prune-versions --all
-```
+List installed modules and print a summary status line.
 
-Actually remove older versions for every module:
+  * `module-audit check-upgrades`
 
-```bash
-module-audit prune-versions --all --dry-run=False --force
-```
+Check installed modules for available upgrades.
 
-Prompt before each removal:
+  * `module-audit report`
 
-```bash
-module-audit prune-versions --all --interactive --dry-run=False --force
-```
+Print an upgrade report.
 
-The command groups modules by `name`, `auth`, and `api`, keeps the latest version in each group, and targets only older versions.
+  * `module-audit prune-versions --all`
 
+Preview removal of older installed versions.
 
-## Apply modules from a file
+  * `module-audit apply-file --file=modules.txt`
 
-Install or update multiple modules from a text file.
+Preview install/update actions from a module list file.
 
-The file may contain simple module names or full zef-style identities:
+DETAILED USAGE
+==============
 
-```text
-JSON::Fast
-Cro::HTTP
-Some::Module:ver<1.2.3>:auth<zef:AUTHOR>
-```
+See `docs/USAGE.rakudoc`.
 
-Blank lines and lines beginning with `#` are ignored.
+AUTHOR
+======
 
-Preview the actions:
+Thomas Browder
 
-```bash
-module-audit apply-file --file=modules.txt
-```
+LICENSE
+=======
 
-Actually install or update the listed modules:
+Artistic License 2.0
 
-```bash
-module-audit apply-file --file=modules.txt --dry-run=False --force
-```
-
-Prompt before each action:
-
-```bash
-module-audit apply-file --file=modules.txt --interactive --dry-run=False --force
-```

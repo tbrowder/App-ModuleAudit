@@ -1,347 +1,61 @@
 =begin pod
 
+=TITLE App::ModuleAudit
+
 =head1 NAME
 
-App::ModuleAudit - Inventory, track, and manage installed Raku modules
+App::ModuleAudit - audit locally installed Raku modules
 
 =head1 SYNOPSIS
 
-    module-audit scan --db-path=modules.db
-    module-audit list --db-path=modules.db
-
-    module-audit check-upgrades --db-path=modules.db
-    module-audit check-upgrades --db-path=modules.db --json
-    module-audit check-upgrades --db-path=modules.db --parallel=8
-
-    module-audit report --db-path=modules.db
-    module-audit report --db-path=modules.db --upgrades-only
-
-    module-audit remove --db-path=modules.db JSON::Fast
-
-    module-audit downgrade \
-        --db-path=modules.db \
-        --name=JSON::Fast \
-        --to=0.19
+=begin code :lang<bash>
+module-audit scan
+module-audit list
+module-audit check-upgrades
+=end code
 
 =head1 DESCRIPTION
 
-App::ModuleAudit is a small toolkit for managing installed Raku modules.
+C<App::ModuleAudit> records and inspects the set of Raku modules installed on a
+local computer.
 
-It has four main goals:
+The default database location is:
 
-=over 4
+=begin code
+~/.module-audit/module-audit.db
+=end code
 
-=item * collect installed module data and store it in a database file
+Use C<--db-path> to override the database file.
 
-=item * check known modules for possible upgrades on a regular schedule
+=head1 COMMON COMMANDS
 
-=item * remove or downgrade selected modules
+=item C<module-audit scan>
 
-=item * provide class objects that make module data easier to work with
+Scan installed modules and save the current module set.
 
-=back
+=item C<module-audit list>
 
-The project is designed as both:
+List installed modules and print a summary status line.
 
-=over 4
+=item C<module-audit check-upgrades>
 
-=item * a command-line application
+Check installed modules for available upgrades.
 
-=item * a reusable library
+=item C<module-audit report>
 
-=back
+Print an upgrade report.
 
-=head1 FEATURES
+=item C<module-audit prune-versions --all>
 
-=head2 Persistent inventory
+Preview removal of older installed versions.
 
-Each scan stores module observations in a SQLite database. The schema separates:
+=item C<module-audit apply-file --file=modules.txt>
 
-=over 4
+Preview install/update actions from a module list file.
 
-=item * module identity
+=head1 DETAILED USAGE
 
-=item * installation observations over time
-
-=back
-
-This makes it possible to preserve history instead of overwriting previous data.
-
-=head2 Upgrade checks
-
-The upgrade check reads known modules from the database, looks up the latest known
-version for each module, and marks modules that appear to have an upgrade available.
-
-This check is intended to be safe for scheduled use. It does not perform upgrades by
-itself.
-
-=head2 Remove and downgrade routines
-
-Removal and downgrade are separate operations. This keeps the management actions
-explicit and reduces risk when the program is run automatically.
-
-=head2 Module objects
-
-Each module is represented as a C<Module-Record> object. This gives a consistent
-place for identity, version metadata, and upgrade state.
-
-=head1 DESIGN
-
-=head2 Class layout
-
-=head3 C<App::ModuleAudit::Module-Record>
-
-Represents one installed module.
-
-Tracks values such as:
-
-=over 4
-
-=item * name
-
-=item * auth
-
-=item * api
-
-=item * ver
-
-=item * latest-known-ver
-
-=item * upgrade-available
-
-=back
-
-=head3 C<App::ModuleAudit::Module-Store>
-
-Acts as the manager for the database and module operations.
-
-Provides methods for:
-
-=over 4
-
-=item * scanning installed modules
-
-=item * saving scan results
-
-=item * loading current module records
-
-=item * checking upgrades
-
-=item * removing modules
-
-=item * downgrading modules
-
-=back
-
-=head2 Database layout
-
-The SQLite database uses two main tables.
-
-=head3 C<module_identities>
-
-Stores the logical identity of a module:
-
-=over 4
-
-=item * name
-
-=item * auth
-
-=item * api
-
-=back
-
-=head3 C<module_installations>
-
-Stores observations over time:
-
-=over 4
-
-=item * version
-
-=item * source
-
-=item * install path
-
-=item * seen timestamp
-
-=item * latest known version
-
-=item * upgrade flag
-
-=back
-
-=head1 COMMANDS
-
-=head2 C<scan>
-
-Scan the currently installed modules and save them to the database.
-
-Example:
-
-    module-audit scan --db-path=modules.db
-
-=head2 C<list>
-
-List the currently known modules from the database.
-
-Example:
-
-    module-audit list --db-path=modules.db
-
-=head2 C<check-upgrades>
-
-Check all known modules for later versions.
-
-Options:
-
-=over 4
-
-=item * C<--json>
-
-Emit machine-readable JSON output.
-
-=item * C<--parallel=N>
-
-Use up to C<N> concurrent lookup tasks.
-
-=back
-
-Examples:
-
-    module-audit check-upgrades --db-path=modules.db
-    module-audit check-upgrades --db-path=modules.db --json
-    module-audit check-upgrades --db-path=modules.db --parallel=8
-
-=head2 C<report>
-
-Show a formatted report of installed and latest known versions.
-
-Options:
-
-=over 4
-
-=item * C<--upgrades-only>
-
-Show only modules with an apparent upgrade available.
-
-=back
-
-Examples:
-
-    module-audit report --db-path=modules.db
-    module-audit report --db-path=modules.db --upgrades-only
-
-=head2 C<remove>
-
-Remove one or more installed modules.
-
-Example:
-
-    module-audit remove --db-path=modules.db JSON::Fast Cro::HTTP
-
-=head2 C<downgrade>
-
-Downgrade one module to a selected version.
-
-Example:
-
-    module-audit downgrade --db-path=modules.db --name=JSON::Fast --to=0.19
-
-=head1 LIBRARY USAGE
-
-=head2 Scan and save
-
-    use App::ModuleAudit;
-
-    my Int:D $count = scan-and-save(db-path => 'modules.db');
-
-=head2 Load installed modules
-
-    use App::ModuleAudit;
-
-    my @modules = load-installed(db-path => 'modules.db');
-
-=head2 Check upgrades
-
-    use App::ModuleAudit;
-
-    my @modules = check-for-upgrades(
-        db-path  => 'modules.db',
-        parallel => 4,
-    );
-
-=head1 AUTOMATION
-
-A scheduled task should normally use only the upgrade check or report commands.
-That keeps scheduled execution non-destructive.
-
-Example cron entry:
-
-    30 6 * * * /usr/bin/env raku /path/to/bin/module-audit \
-        check-upgrades --db-path=/path/to/modules.db --json \
-        > /path/to/report.json
-
-=head1 LIMITATIONS
-
-=over 4
-
-=item * The exact output of C<zef list --installed> can vary and may require parser refinement.
-
-=item * Downgrade support depends on installer behavior and available historical releases.
-
-=item * The current upgrade lookup uses C<zef info> and may need adjustment for some repositories.
-
-=back
-
-=head1 PROJECT LAYOUT
-
-    bin/
-        module-audit
-    docs/
-        README.rakudoc
-    lib/
-        App/
-            ModuleAudit.rakumod
-            ModuleAudit/
-                DB.rakumod
-                Module-Record.rakumod
-                Module-Store.rakumod
-                Scanner.rakumod
-    t/
-        00-load.t
-        01-module-record.t
-        02-scanner-parse.t
-
-=head1 BUILD AND TEST
-
-Typical commands:
-
-    mi6 test
-    mi6 build
-    mi6 dist
-
-For direct dependency testing:
-
-    zef test .
-
-=head1 FUTURE WORK
-
-Possible next improvements include:
-
-=over 4
-
-=item * better structured metadata lookup
-
-=item * dependency graph storage
-
-=item * scan-to-scan diff reports
-
-=item * notification hooks for upgrade results
-
-=item * stronger downgrade resolution logic
-
-=back
+See C<docs/USAGE.rakudoc>.
 
 =head1 AUTHOR
 
@@ -352,117 +66,3 @@ Thomas Browder
 Artistic License 2.0
 
 =end pod
-
-
-=head2 Scheduled upgrade checks
-
-The C<check-upgrades> command is safe by default: it reports available upgrades but does not install them.
-Use C<--apply> only when you want the checker to run C<zef install> for modules with newer versions.
-Use C<--dry-run> with C<--apply> to print the commands without changing the system.
-
-Examples:
-
-=begin code
-module-audit check-upgrades --db-path=modules.db
-module-audit check-upgrades --db-path=modules.db --upgrades-only --quiet --log=upgrade.log
-module-audit check-upgrades --db-path=modules.db --apply --dry-run
-=end code
-
-A cron-friendly helper is provided as C<scripts/module-audit-cron>. Example crontab entry:
-
-=begin code
-0 3 * * * /path/to/App-ModuleAudit/scripts/module-audit-cron
-=end code
-
-=head2 Remove and downgrade helpers
-
-=begin code
-module-audit remove Some::Module --db-path=modules.db --dry-run
-module-audit downgrade --name=Some::Module --to=1.2.3 --db-path=modules.db --dry-run
-=end code
-
-
-## List output
-
-The `list` command uses the default database at:
-
-```text
-~/.module-audit/module-audit.db
-```
-
-Use `--db-path` to override that location.
-
-```bash
-module-audit list
-module-audit list --repeat-headings
-```
-
-The `list` output includes an `UPGRADE AVAILABLE` column and a final summary line with total unique installed modules, modules with available upgrades, up-to-date modules, and records missing a version.
-
-
-## Prune older installed versions
-
-Remove all but the latest installed version of one module.
-
-The command is safe by default and runs as a dry run unless `--dry-run=False --force` is supplied.
-
-```bash
-module-audit prune-versions --name=JSON::Fast
-module-audit prune-versions --name=JSON::Fast --dry-run=False --force
-```
-
-
-## Prune all older installed versions
-
-Preview older installed versions for every module:
-
-```bash
-module-audit prune-versions --all
-```
-
-Actually remove older versions for every module:
-
-```bash
-module-audit prune-versions --all --dry-run=False --force
-```
-
-Prompt before each removal:
-
-```bash
-module-audit prune-versions --all --interactive --dry-run=False --force
-```
-
-The command groups modules by `name`, `auth`, and `api`, keeps the latest version in each group, and targets only older versions.
-
-
-## Apply modules from a file
-
-Install or update multiple modules from a text file.
-
-The file may contain simple module names or full zef-style identities:
-
-```text
-JSON::Fast
-Cro::HTTP
-Some::Module:ver<1.2.3>:auth<zef:AUTHOR>
-```
-
-Blank lines and lines beginning with `#` are ignored.
-
-Preview the actions:
-
-```bash
-module-audit apply-file --file=modules.txt
-```
-
-Actually install or update the listed modules:
-
-```bash
-module-audit apply-file --file=modules.txt --dry-run=False --force
-```
-
-Prompt before each action:
-
-```bash
-module-audit apply-file --file=modules.txt --interactive --dry-run=False --force
-```
