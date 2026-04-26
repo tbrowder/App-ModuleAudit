@@ -1,10 +1,18 @@
 use v6;
 use Test;
 
-use-ok 'App::ModuleAudit';
-use-ok 'App::ModuleAudit::DB';
-use-ok 'App::ModuleAudit::Module-Record';
-use-ok 'App::ModuleAudit::Module-Store';
-use-ok 'App::ModuleAudit::Scanner';
+my @modules = <
+   App::ModuleAudit
+   App::ModuleAudit::DB
+   App::ModuleAudit::Upgrade-Checker
+   App::ModuleAudit::Module-Record
+   App::ModuleAudit::Module-Store
+   App::ModuleAudit::Scanner
+>;
 
-done-testing;
+
+plan @modules.elems;
+
+for @modules -> $m {
+    use-ok $m, "Module '$m' used okay";
+}
