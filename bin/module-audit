@@ -65,6 +65,102 @@ sub print-list-summary(@modules --> Nil) {
 }
 
 
+sub compare-version-text(Str:D $left, Str:D $right --> Int:D) {
+    my @left-parts = $left.split(/<[.\-+_]>+/);
+    my @right-parts = $right.split(/<[.\-+_]>+/);
+    my Int:D $max = @left-parts.elems > @right-parts.elems
+        ?? @left-parts.elems
+        !! @right-parts.elems;
+
+    for 0 ..^ $max -> $i {
+        my Str:D $a = @left-parts[$i] // '0';
+        my Str:D $b = @right-parts[$i] // '0';
+
+        if $a ~~ /^ \d+ $/ and $b ~~ /^ \d+ $/ {
+            return 1 if $a.Int > $b.Int;
+            return -1 if $a.Int < $b.Int;
+        }
+        else {
+            return 1 if $a gt $b;
+            return -1 if $a lt $b;
+        }
+    }
+
+    return 0;
+}
+
+sub module-spec-for-version($module, Str:D $version --> Str:D) {
+    my Str:D $spec = "{$module.name}:ver<{$version}>";
+
+    if $module.auth.defined and $module.auth.chars > 0 {
+        $spec ~= ":auth<{$module.auth}>";
+    }
+
+    if $module.api.defined and $module.api.chars > 0 {
+        $spec ~= ":api<{$module.api}>";
+    }
+
+    return $spec;
+}
+
+sub read-module-spec-file(Str:D $file --> Array) {
+    my Str:D @specs;
+
+    for $file.IO.lines -> $line {
+        my Str:D $trimmed = $line.trim;
+
+        next if $trimmed eq '';
+        next if $trimmed.starts-with('#');
+
+        @specs.push($trimmed);
+    }
+
+    return @specs.Array;
+}
+
+sub run-install(Str:D $spec, Bool:D :$dry-run --> Bool:D) {
+    my @cmd = 'zef', 'install', $spec;
+
+    if $dry-run {
+        say "[dry-run] " ~ @cmd.join(' ');
+        return True;
+    }
+
+    my $proc = run |@cmd, :out, :err;
+    my Str:D $out = $proc.out.slurp-rest;
+    my Str:D $err = $proc.err.slurp-rest;
+
+    print $out if $out.chars > 0;
+    note $err if $err.chars > 0;
+
+    return $proc.exitcode == 0;
+}
+
+sub confirm-action(Str:D $prompt --> Bool:D) {
+    print "{$prompt} [y/N] ";
+    my $answer = $*IN.get // '';
+    return $answer.lc eq 'y' or $answer.lc eq 'yes';
+}
+
+sub run-uninstall(Str:D $spec, Bool:D :$dry-run --> Bool:D) {
+    my @cmd = 'zef', 'uninstall', $spec;
+
+    if $dry-run {
+        say "[dry-run] " ~ @cmd.join(' ');
+        return True;
+    }
+
+    my $proc = run |@cmd, :out, :err;
+    my Str:D $out = $proc.out.slurp-rest;
+    my Str:D $err = $proc.err.slurp-rest;
+
+    print $out if $out.chars > 0;
+    note $err if $err.chars > 0;
+
+    return $proc.exitcode == 0;
+}
+
+
 multi sub MAIN(
     'scan',
     Str:D :$db-path = default-db-path()
@@ -167,6 +263,173 @@ multi sub MAIN(
             $module.latest-known-ver // '*',
             $status;
     }
+}
+
+
+
+multi sub MAIN(
+    'apply-file',
+    Str:D :$file!,
+    Bool:D :$interactive = False,
+    Bool:D :$dry-run = True,
+    Bool:D :$force = False
+) {
+    if not $file.IO.e {
+        die "Module spec file does not exist: {$file}";
+    }
+
+    if not $dry-run and not $force {
+        die "Refusing to install or update modules without --force. Use --dry-run first, then --force.";
+    }
+
+    my @specs = read-module-spec-file($file);
+
+    if @specs.elems == 0 {
+        say "No module specs found in {$file}.";
+        return;
+    }
+
+    my Int:D $total = 0;
+    my Int:D $successful = 0;
+    my Int:D $failed = 0;
+    my Int:D $skipped = 0;
+
+    for @specs -> $spec {
+        $total++;
+
+        if $interactive {
+            unless confirm-action("Install or update {$spec}?") {
+                say "Skipped {$spec}";
+                $skipped++;
+                next;
+            }
+        }
+
+        if run-install($spec, :$dry-run) {
+            $successful++;
+        }
+        else {
+            $failed++;
+        }
+    }
+
+    say "";
+    say "Apply summary: total={$total}; "
+        ~ "successful={$successful}; "
+        ~ "failed={$failed}; "
+        ~ "skipped={$skipped}; "
+        ~ "dry-run={$dry-run}; "
+        ~ "interactive={$interactive}";
+}
+
+multi sub MAIN(
+    'prune-versions',
+    Str:D :$db-path = default-db-path(),
+    Str :$name,
+    Bool:D :$all = False,
+    Bool:D :$interactive = False,
+    Bool:D :$dry-run = True,
+    Bool:D :$force = False
+) {
+    if not $all and not $name.defined {
+        die "Specify --name=<module> or --all.";
+    }
+
+    if $all and $name.defined {
+        die "Use either --name or --all, not both.";
+    }
+
+    if not $dry-run and not $force {
+        die "Refusing to uninstall without --force. Use --dry-run first, then --force.";
+    }
+
+    my @modules = load-installed(db-path => $db-path);
+    my %groups;
+
+    for @modules -> $module {
+        next unless $module.ver.defined and $module.ver.chars > 0;
+
+        if $name.defined and $module.name ne $name {
+            next;
+        }
+
+        my Str:D $identity-key = $module.name ~ "	"
+            ~ ($module.auth // '') ~ "	"
+            ~ ($module.api // '');
+
+        %groups{$identity-key}.push($module);
+    }
+
+    if %groups.elems == 0 {
+        if $all {
+            say "No installed modules with version data found.";
+        }
+        else {
+            say "No installed versions found for {$name}.";
+        }
+
+        return;
+    }
+
+    my Int:D $groups-seen = 0;
+    my Int:D $groups-pruned = 0;
+    my Int:D $targets = 0;
+    my Int:D $successful = 0;
+    my Int:D $failed = 0;
+    my Int:D $skipped = 0;
+
+    for %groups.keys.sort -> $key {
+        my @group = %groups{$key}.Array;
+        $groups-seen++;
+
+        next if @group.elems <= 1;
+
+        my $latest = @group[0];
+
+        for @group -> $module {
+            if compare-version-text($module.ver, $latest.ver) > 0 {
+                $latest = $module;
+            }
+        }
+
+        say "";
+        say "Module: {$latest.name}";
+        say "Keeping latest: {$latest.name}:ver<{$latest.ver}>";
+
+        $groups-pruned++;
+
+        for @group.sort(*.ver) -> $module {
+            next if $module.ver eq $latest.ver;
+
+            my Str:D $spec = module-spec-for-version($module, $module.ver);
+            $targets++;
+
+            if $interactive {
+                unless confirm-action("Remove older version {$spec}?") {
+                    say "Skipped {$spec}";
+                    $skipped++;
+                    next;
+                }
+            }
+
+            if run-uninstall($spec, :$dry-run) {
+                $successful++;
+            }
+            else {
+                $failed++;
+            }
+        }
+    }
+
+    say "";
+    say "Prune summary: groups checked={$groups-seen}; "
+        ~ "groups with older versions={$groups-pruned}; "
+        ~ "older versions targeted={$targets}; "
+        ~ "successful={$successful}; "
+        ~ "failed={$failed}; "
+        ~ "skipped={$skipped}; "
+        ~ "dry-run={$dry-run}; "
+        ~ "interactive={$interactive}";
 }
 
 multi sub MAIN(
