@@ -8,7 +8,7 @@ App::ModuleAudit - audit locally installed Raku modules
 
 =head1 SYNOPSIS
 
-=begin code :lang<bash>
+=begin code
 module-audit scan
 module-audit list
 module-audit check-upgrades
@@ -16,8 +16,8 @@ module-audit check-upgrades
 
 =head1 DESCRIPTION
 
-C<App::ModuleAudit> records and inspects the set of Raku modules installed on a
-local computer.
+C<App::ModuleAudit> records and inspects the set of Raku modules
+installed on a local computer.
 
 The default database location is:
 
@@ -59,10 +59,12 @@ See C<docs/USAGE.rakudoc>.
 
 =head1 AUTHOR
 
-Thomas Browder
+Thomas "Tom" Browder <tbrowder@acm.org>
 
-=head1 LICENSE
+=head1 COPYRIGHT AND LICENSE
 
-Artistic License 2.0
+© 2026 Thomas "Tom" Browder, Jr.
+
+This library is free software; you may redistribute it or modify it under the Artistic License 2.0.
 
 =end pod

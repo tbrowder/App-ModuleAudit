@@ -13,11 +13,9 @@ App::ModuleAudit - audit locally installed Raku modules
 SYNOPSIS
 ========
 
-```bash
-module-audit scan
-module-audit list
-module-audit check-upgrades
-```
+    module-audit scan
+    module-audit list
+    module-audit check-upgrades
 
 DESCRIPTION
 ===========
@@ -65,10 +63,12 @@ See `docs/USAGE.rakudoc`.
 AUTHOR
 ======
 
-Thomas Browder
+Thomas "Tom" Browder <tbrowder@acm.org>
 
-LICENSE
-=======
+COPYRIGHT AND LICENSE
+=====================
 
-Artistic License 2.0
+© 2026 Thomas "Tom" Browder, Jr.
+
+This library is free software; you may redistribute it or modify it under the Artistic License 2.0.
 
