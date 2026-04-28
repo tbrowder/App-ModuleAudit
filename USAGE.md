@@ -74,3 +74,8 @@ Prune verification
 
 After each uninstall attempt, `prune-versions` verifies the requested older version against fresh `zef list --installed` output. The summary separates successful removals from already-absent targets, failed `zef` commands, not-verified removals, and skipped targets.
 
+INTEGRATION TESTING
+===================
+
+The file `t/04-prune-behavior.t` creates a temporary local module, installs multiple versions with `zef`, scans them, and exercises `prune-versions`. The final uninstall verification is marked TODO until the exact local `zef` version-removal behavior is settled.
+
