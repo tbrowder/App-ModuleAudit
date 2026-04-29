@@ -7,12 +7,11 @@
   ],
   "depends": [
     "DBIish",
-    "JSON::Fast",
+    "JSON::Fast"
   ],
   "description": "Manage local Raku modules",
   "license": "Artistic-2.0",
   "name": "App::ModuleAudit",
-  "raku": "6.d",
   "provides": {
     "App::ModuleAudit": "lib/App/ModuleAudit.rakumod",
     "App::ModuleAudit::DB": "lib/App/ModuleAudit/DB.rakumod",
@@ -21,6 +20,7 @@
     "App::ModuleAudit::Scanner": "lib/App/ModuleAudit/Scanner.rakumod",
     "App::ModuleAudit::Upgrade-Checker": "lib/App/ModuleAudit/Upgrade-Checker.rakumod"
   },
+  "raku": "6.d",
   "resources": [
   ],
   "source-url": "https://github.com/tbrowder/App-ModuleAudit.git",
@@ -28,5 +28,5 @@
   ],
   "test-depends": [
   ],
-  "version": "0.0.2"
+  "version": "0.0.1"
 }
