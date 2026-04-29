@@ -6,6 +6,7 @@
   "build-depends": [
   ],
   "depends": [
+    "DBIish"
   ],
   "description": "Manage local Raku modules",
   "license": "Artistic-2.0",
