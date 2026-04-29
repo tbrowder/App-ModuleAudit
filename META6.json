@@ -12,7 +12,7 @@
   "description": "Manage local Raku modules",
   "license": "Artistic-2.0",
   "name": "App::ModuleAudit",
-  "perl": "6.d",
+  "raku": "6.d",
   "provides": {
     "App::ModuleAudit": "lib/App/ModuleAudit.rakumod",
     "App::ModuleAudit::DB": "lib/App/ModuleAudit/DB.rakumod",
