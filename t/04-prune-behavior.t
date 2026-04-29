@@ -1,7 +1,7 @@
 use v6;
 use Test;
 
-plan 9; # 10;
+plan 10;
 
 my Str:D $module-name = 'Dummy::Module';
 my Str:D $auth = 'zef:test';
@@ -162,8 +162,6 @@ diag $prune-out if $prune-out.chars > 0;
 diag $prune-err if $prune-err.chars > 0;
 
 ok $prune-proc.exitcode == 0, 'prune command completed';
-
-=finish
 
 todo 'desired final behavior depends on local zef uninstall/version semantics', 1;
 ok installed-version-present('0.0.2') && not installed-version-present('0.0.1'),
