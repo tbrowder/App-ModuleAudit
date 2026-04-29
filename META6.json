@@ -6,7 +6,8 @@
   "build-depends": [
   ],
   "depends": [
-    "DBIish"
+    "DBIish",
+    "JSON::Fast",
   ],
   "description": "Manage local Raku modules",
   "license": "Artistic-2.0",
