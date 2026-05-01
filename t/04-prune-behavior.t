@@ -1,6 +1,11 @@
 use v6;
 use Test;
 
+if $*DISTRO.is-win {
+    skip-rest 'prune behavior integration test is skipped on Windows due to zef/CLI subprocess quirks';
+    exit;
+}
+
 plan 10;
 
 my Str:D $module-name = 'Dummy::Module';
