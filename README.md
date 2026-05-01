@@ -1,74 +1,74 @@
-# App::ModuleAudit
+[![Actions Status](https://github.com/tbrowder/App-ModuleAudit/actions/workflows/linux.yml/badge.svg)](https://github.com/tbrowder/App-ModuleAudit/actions) [![Actions Status](https://github.com/tbrowder/App-ModuleAudit/actions/workflows/macos.yml/badge.svg)](https://github.com/tbrowder/App-ModuleAudit/actions) [![Actions Status](https://github.com/tbrowder/App-ModuleAudit/actions/workflows/windows.yml/badge.svg)](https://github.com/tbrowder/App-ModuleAudit/actions)
 
-`App::ModuleAudit` is a small Raku command-line tool for auditing locally installed Raku modules.
+TITLE
+=====
 
-It can:
+App::ModuleAudit
 
-- scan installed modules into a local SQLite database
-- list the current installed module set
-- check for available upgrades
-- remove or downgrade modules
-- prune older installed versions
-- apply installs or updates from a file
+NAME
+====
 
-## Install
+App::ModuleAudit - audit locally installed Raku modules
 
-From the project directory:
-
-```bash
-zef install .
-```
-
-For testing during development:
-
-```bash
-zef test .
-```
-
-## Default database
-
-By default, the tool stores its database at:
-
-```text
-~/.module-audit/module-audit.db
-```
-
-Use `--db-path=/path/to/file.db` to override that location.
-
-## Quick start
+SYNOPSIS
+========
 
 ```bash
 module-audit scan
 module-audit list
-module-audit list --repeat-headings
 module-audit check-upgrades
-module-audit report
 ```
 
-## Maintenance commands
+DESCRIPTION
+===========
 
-```bash
-module-audit prune-versions --name=JSON::Fast
-module-audit prune-versions --all
-module-audit prune-versions --all --dry-run=False --force
-module-audit apply-file --file=modules.txt
-module-audit apply-file --file=modules.txt --dry-run=False --force
-```
+`App::ModuleAudit` records and inspects the set of Raku modules installed on a local computer.
 
-## More documentation
+The default database location is:
 
-Detailed usage notes are in:
+    ~/.module-audit/module-audit.db
 
-```text
-docs/USAGE.rakudoc
-```
+Use `--db-path` to override the database file.
 
-The source document for this README is:
+COMMON COMMANDS
+===============
 
-```text
-docs/README.rakudoc
-```
+  * `module-audit scan`
 
-## License
+Scan installed modules and save the current module set.
 
-This project is distributed under the Artistic License 2.0.
+  * `module-audit list`
+
+List installed modules and print a summary status line.
+
+  * `module-audit check-upgrades`
+
+Check installed modules for available upgrades.
+
+  * `module-audit report`
+
+Print an upgrade report.
+
+  * `module-audit prune-versions --all`
+
+Preview removal of older installed versions.
+
+  * `module-audit apply-file --file=modules.txt`
+
+Preview install/update actions from a module list file.
+
+DETAILED USAGE
+==============
+
+See `docs/USAGE.rakudoc`.
+
+AUTHOR
+======
+
+Thomas Browder
+
+LICENSE
+=======
+
+Artistic License 2.0
+
