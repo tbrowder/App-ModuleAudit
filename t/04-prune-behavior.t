@@ -2,8 +2,7 @@ use v6;
 use Test;
 
 if $*DISTRO.is-win {
-    skip-rest 'prune behavior integration test is skipped on Windows due to zef/CLI subprocess quirks';
-    exit;
+    plan :skip-all('prune behavior integration test is skipped on Windows');
 }
 
 plan 10;
@@ -105,14 +104,16 @@ sub uninstall-dummy(--> Nil) {
     $proc.out.slurp-rest;
     $proc.err.slurp-rest;
 }
-
 sub cleanup-test-files(--> Nil) {
-    if $tmp-root.IO.e {
-        $tmp-root.IO.rmtree;
+    my IO::Path:D $tmp = $tmp-root.IO;
+    my IO::Path:D $db  = $db-path.IO;
+
+    if $tmp.e {
+        $tmp.rmtree;
     }
 
-    if $db-path.IO.e {
-        $db-path.IO.unlink;
+    if $db.e {
+        $db.unlink;
     }
 }
 
