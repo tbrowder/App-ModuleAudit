@@ -135,7 +135,7 @@ command-ok 'zef', 'install', $new-dir, :message('installed new dummy module');
 ok installed-version-present('0.0.1'), 'old version appears installed before prune';
 ok installed-version-present('0.0.2'), 'new version appears installed before prune';
 
-my $scan-proc = run $*EXECUTABLE, '-Ilib', 'bin/module-audit',
+my $scan-proc = run 'raku', '-Ilib', 'bin/module-audit',
     "--db-path=$db-path",
     'scan',
     :out,
@@ -146,7 +146,7 @@ diag $scan-proc.err.slurp-rest if $scan-proc.exitcode != 0;
 
 ok $scan-proc.exitcode == 0, 'scan completed before prune';
 
-my $prune-proc = run $*EXECUTABLE, '-Ilib', 'bin/module-audit',
+my $prune-proc = run 'raku', '-Ilib', 'bin/module-audit',
     "--db-path=$db-path",
     '--name=Dummy::Module',
     '--dry-run=False',
