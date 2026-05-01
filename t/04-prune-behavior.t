@@ -149,7 +149,7 @@ ok $scan-proc.exitcode == 0, 'scan completed before prune';
 my $prune-proc = run 'raku', '-Ilib', 'bin/module-audit',
     "--db-path=$db-path",
     '--name=Dummy::Module',
-    '--dry-run=False',
+    '--/dry-run',
     '--force',
     'prune-versions',
     :out,
