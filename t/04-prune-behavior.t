@@ -103,7 +103,7 @@ sub uninstall-dummy(--> Nil) {
 
 sub cleanup-test-files(--> Nil) {
     if $tmp-root.IO.e {
-        run 'rm', '-rf', $tmp-root;
+        $tmp-root.IO.rmtree;
     }
 
     if $db-path.IO.e {
