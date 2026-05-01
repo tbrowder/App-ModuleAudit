@@ -55,7 +55,7 @@ Preview install/update actions from a module list file.
 
 =head1 DETAILED USAGE
 
-See C<docs/USAGE.rakudoc>.
+See C<USAGE.md>.
 
 =head1 AUTHOR
 

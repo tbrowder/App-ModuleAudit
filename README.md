@@ -60,7 +60,7 @@ Preview install/update actions from a module list file.
 DETAILED USAGE
 ==============
 
-See `docs/USAGE.rakudoc`.
+See `USAGE.md`.
 
 AUTHOR
 ======
