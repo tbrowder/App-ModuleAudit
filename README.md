@@ -65,10 +65,12 @@ See `docs/USAGE.rakudoc`.
 AUTHOR
 ======
 
-Thomas Browder
+Tom Browder <tbrowder@acm.org>
 
-LICENSE
-=======
+COPYRIGHT and LICENSE
+=====================
 
-Artistic License 2.0
+© 2026 Tom Browder
+
+This library is free software; you may redistribute or modify it under the Artistic License 2.0.
 
