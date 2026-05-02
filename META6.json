@@ -6,6 +6,7 @@
   "build-depends": [
   ],
   "depends": [
+    "File::Directory::Tree",
     "DBIish",
     "JSON::Fast"
   ],

@@ -31,8 +31,20 @@ The list command shows installed modules and prints a summary line.
 
 =begin code :lang<bash>
 module-audit check-upgrades
+module-audit check-upgrades --parallel=1 --timeout=60
 module-audit report
+module-audit report --quiet
 =end code
+
+Upgrade checks call C<zef info> for each installed module. Because that can
+be slow, progress messages are written to STDERR before and during the checks.
+Use C<--quiet> to suppress those progress messages.
+
+The default upgrade-check parallelism is 2. Use C<--parallel=1> when debugging
+or when C<zef> appears overloaded. Each C<zef info> command has a default
+timeout of 30 seconds. Use C<--timeout=N> to change that timeout. A timed-out
+module is reported as having no latest version rather than blocking the entire
+run.
 
 =head1 PRUNING OLD VERSIONS
 
@@ -74,7 +86,6 @@ After each uninstall attempt, C<prune-versions> verifies the requested older
 version against fresh C<zef list --installed> output. The summary separates
 successful removals from already-absent targets, failed C<zef> commands,
 not-verified removals, and skipped targets.
-
 
 =head1 INTEGRATION TESTING
 

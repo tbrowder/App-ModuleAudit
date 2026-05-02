@@ -211,13 +211,19 @@ multi sub MAIN(
     Bool:D :$apply = False,
     Bool:D :$dry-run = False,
     Str :$log,
-    Int:D :$parallel = 4
+    Int:D :$parallel = 2,
+    Int:D :$timeout = 30
 ) {
+    note "Preparing upgrade check from {$db-path}..." unless $quiet;
+    $*ERR.flush unless $quiet;
+
     my @modules = check-for-upgrades(
         db-path  => $db-path,
         parallel => $parallel,
+        timeout  => $timeout,
         :$apply,
         :$dry-run,
+        :$quiet,
     );
 
     my @lines;
@@ -254,11 +260,18 @@ multi sub MAIN(
     'report',
     Str:D :$db-path = default-db-path(),
     Bool:D :$upgrades-only = False,
-    Int:D :$parallel = 4
+    Int:D :$parallel = 2,
+    Int:D :$timeout = 30,
+    Bool:D :$quiet = False
 ) {
+    note "Generating report from {$db-path}..." unless $quiet;
+    $*ERR.flush unless $quiet;
+
     my @modules = check-for-upgrades(
         db-path  => $db-path,
         parallel => $parallel,
+        timeout  => $timeout,
+        :$quiet,
     );
 
     say sprintf '%-35s %-12s %-12s %s', 'Module', 'Installed', 'Latest', 'Status';

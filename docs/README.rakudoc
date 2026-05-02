@@ -53,6 +53,13 @@ Preview removal of older installed versions.
 
 Preview install/update actions from a module list file.
 
+=head1 UPGRADE CHECK NOTES
+
+C<check-upgrades> and C<report> write progress messages to STDERR while they
+query C<zef info>. The default parallelism is 2 and each C<zef info> command
+uses a 30-second timeout. Use C<--parallel=1> for debugging, C<--timeout=N> for
+slower systems, and C<--quiet> to suppress progress messages.
+
 =head1 DETAILED USAGE
 
 See C<USAGE.md>.

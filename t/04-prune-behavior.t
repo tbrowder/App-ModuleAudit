@@ -1,5 +1,6 @@
 use v6;
 use Test;
+use File::Directory::Tree;
 
 if $*DISTRO.is-win {
     plan :skip-all('prune behavior integration test is skipped on Windows');
@@ -109,7 +110,7 @@ sub cleanup-test-files(--> Nil) {
     my IO::Path:D $db  = $db-path.IO;
 
     if $tmp.e {
-        $tmp.rmtree;
+        rmtree $tmp;
     }
 
     if $db.e {

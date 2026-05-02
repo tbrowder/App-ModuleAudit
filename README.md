@@ -57,6 +57,11 @@ Preview removal of older installed versions.
 
 Preview install/update actions from a module list file.
 
+UPGRADE CHECK NOTES
+===================
+
+`check-upgrades` and `report` write progress messages to STDERR while they query `zef info`. The default parallelism is 2 and each `zef info` command uses a 30-second timeout. Use `--parallel=1` for debugging, `--timeout=N` for slower systems, and `--quiet` to suppress progress messages.
+
 DETAILED USAGE
 ==============
 

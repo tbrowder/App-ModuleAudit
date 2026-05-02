@@ -34,8 +34,14 @@ UPGRADE CHECKING
 
 ```bash
 module-audit check-upgrades
+module-audit check-upgrades --parallel=1 --timeout=60
 module-audit report
+module-audit report --quiet
 ```
+
+Upgrade checks call `zef info` for each installed module. Because that can be slow, progress messages are written to STDERR before and during the checks. Use `--quiet` to suppress those progress messages.
+
+The default upgrade-check parallelism is 2. Use `--parallel=1` when debugging or when `zef` appears overloaded. Each `zef info` command has a default timeout of 30 seconds. Use `--timeout=N` to change that timeout. A timed-out module is reported as having no latest version rather than blocking the entire run.
 
 PRUNING OLD VERSIONS
 ====================

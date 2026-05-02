@@ -99,15 +99,19 @@ method load-installed(--> Array) {
 }
 
 method check-upgrades(
-    Int:D :$parallel = 4,
+    Int:D :$parallel = 2,
+    Int:D :$timeout = 30,
     Bool:D :$apply = False,
-    Bool:D :$dry-run = False
+    Bool:D :$dry-run = False,
+    Bool:D :$quiet = False
     --> Array
 ) {
     my @modules = self.load-installed();
     my $checker = App::ModuleAudit::Upgrade-Checker.new(
         :$apply,
         :$dry-run,
+        :$quiet,
+        :$timeout,
     );
 
     return $checker.check(@modules, :$parallel);

@@ -20,16 +20,20 @@ our sub load-installed(
 
 our sub check-for-upgrades(
     Str:D :$db-path!,
-    Int:D :$parallel = 4,
+    Int:D :$parallel = 2,
+    Int:D :$timeout = 30,
     Bool:D :$apply = False,
-    Bool:D :$dry-run = False
+    Bool:D :$dry-run = False,
+    Bool:D :$quiet = False
     --> Array
 ) is export {
     my $store = App::ModuleAudit::Module-Store.new(db-path => $db-path);
     return $store.check-upgrades(
         parallel => $parallel,
+        timeout  => $timeout,
         :$apply,
         :$dry-run,
+        :$quiet,
     );
 }
 
