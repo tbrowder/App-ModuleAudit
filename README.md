@@ -1,10 +1,5 @@
 [![Actions Status](https://github.com/tbrowder/App-ModuleAudit/actions/workflows/linux.yml/badge.svg)](https://github.com/tbrowder/App-ModuleAudit/actions) [![Actions Status](https://github.com/tbrowder/App-ModuleAudit/actions/workflows/macos.yml/badge.svg)](https://github.com/tbrowder/App-ModuleAudit/actions) [![Actions Status](https://github.com/tbrowder/App-ModuleAudit/actions/workflows/windows.yml/badge.svg)](https://github.com/tbrowder/App-ModuleAudit/actions)
 
-TITLE
-=====
-
-App::ModuleAudit
-
 NAME
 ====
 

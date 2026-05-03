@@ -1,7 +1,5 @@
 =begin pod
 
-=TITLE App::ModuleAudit
-
 =head1 NAME
 
 App::ModuleAudit - audit locally installed Raku modules
